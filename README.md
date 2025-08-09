@@ -85,6 +85,32 @@ If you replace the TLS certs, rebuild the image so that the development overlay 
 - Database connectivity: Verify `keycloak-database` Service DNS and that credential exists in the `keycloak-credentials`
   Secret.
 
+## Scaling PostgreSQL in Kubernetes
+
+This repo ships a minimal, single-instance PostgreSQL (StatefulSet) suitable for development and simple prod setups. To "scale" Postgres, consider:
+
+- Vertical scaling (simplest):
+  - Increase CPU/memory limits/requests in [k8s/base/persistence/workloads.yaml](k8s/base/persistence/workloads.yaml).
+  - Increase PVC size by changing the volumeClaimTemplates storage request. Ensure your StorageClass supports expansion.
+- High availability / horizontal scaling (recommended for production):
+  - Use a PostgreSQL operator/HA distribution to create a primary + replica(s) cluster with automatic failover:
+    - Zalando Postgres Operator (Patroni-based): https://github.com/zalando/postgres-operator
+    - CrunchyData Postgres Operator: https://access.crunchydata.com/documentation/postgres-operator/
+    - Bitnami PostgreSQL HA (Patroni) Helm chart: https://github.com/bitnami/charts/tree/main/bitnami/postgresql-ha
+  - These solutions provision a writer Service (primary) and reader Service (replicas). Point Keycloak to the writer Service via `KC_DB_URL`.
+
+Important notes:
+- Do not scale the current postgres StatefulSet by setting `replicas > 1`: the vanilla `postgres:17-alpine` image does not configure replication/failover.
+- We added a PodDisruptionBudget and anti-affinity to improve availability and spread scheduling; they are safe with a single replica and helpful once you adopt an HA setup.
+
+Example: switching Keycloak to an HA Postgres Service
+- After installing an operator/HA chart, set `KC_DB_URL` (in [k8s/base/workloads.yaml](k8s/base/workloads.yaml)) to the operator-provided writer Service DNS, e.g.:
+  - `jdbc:postgresql://my-postgres-primary.keycloak.svc.cluster.local:5432/authentication`
+- Keep `KC_DB_USERNAME`/`KC_DB_PASSWORD` in the `keycloak-credentials` Secret (or ExternalSecret in production).
+
+Rollback path:
+- If you need to migrate data from this single-instance DB to an operator-managed cluster, run a `pg_dump`/`pg_restore` Job or connect using logical replication, then switch `KC_DB_URL` and roll your Keycloak StatefulSet.
+
 ## Style & Conventions
 
 - YAML uses 2-space indentation.

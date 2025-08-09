@@ -6,6 +6,10 @@ metadata:
   labels:
     app: keycloak-database
 spec:
+  # IMPORTANT: Do NOT scale replicas for this StatefulSet without introducing
+  # PostgreSQL replication/failover (e.g., an operator like Patroni/Zalando,
+  # CrunchyData, or Bitnami PostgreSQL HA). Simply setting replicas > 1 on the
+  # vanilla postgres image will not create a functional cluster.
   serviceName: keycloak-database
   volumeClaimTemplates:
     - metadata:
@@ -23,6 +27,17 @@ spec:
       labels:
         app: keycloak-database
     spec:
+      # Anti-affinity helps spread replicas across nodes if you later migrate to
+      # a replicated/HA PostgreSQL image/operator.
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: keycloak-database
       containers:
         - name: postgres
           image: postgres:17-alpine
