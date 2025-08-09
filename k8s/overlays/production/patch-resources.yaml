@@ -10,6 +10,11 @@ spec:
     spec:
       containers:
         - name: keycloak
+          env:
+            - name: KC_HOSTNAME
+              value: "https://oauth.xently.co.ke"
+            - name: KC_PROXY
+              value: "edge"
           resources:
             limits:
               cpu: 2000m
