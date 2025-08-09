@@ -33,9 +33,8 @@ Audience: Advanced platform/devops engineers working with `kustomize`, `kubectl`
 │   │   ├── workloads.yaml     # Keycloak StatefulSet
 │   │   ├── services.yaml      # 8080/8443/9000; headless discovery service
 │   │   └── persistence/
-│   │       ├── workloads.yaml # Postgres Deployment
-│   │       ├── services.yaml  # Postgres Service
-│   │       └── volumes.yaml   # PVC for Postgres data
+│   │       ├── workloads.yaml # Postgres StatefulSet (with volumeClaimTemplates)
+│   │       └── services.yaml  # Postgres Service
 │   └── overlays/
 │       ├── development/       # start-dev, relaxed hostname, LB Service, plaintext Secret
 │       └── production/        # ExternalSecrets + resource/replica patches

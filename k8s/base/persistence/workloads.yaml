@@ -1,10 +1,20 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: keycloak-database
   namespace: keycloak
+  labels:
+    app: keycloak-database
 spec:
-  replicas: 1
+  serviceName: keycloak-database
+  volumeClaimTemplates:
+    - metadata:
+        name: db-storage
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 1Gi
   selector:
     matchLabels:
       app: keycloak-database
@@ -26,15 +36,33 @@ spec:
               valueFrom: { secretKeyRef: { name: keycloak-credentials, key: DB_USERNAME } }
             - name: POSTGRES_PASSWORD
               valueFrom: { secretKeyRef: { name: keycloak-credentials, key: DB_PASSWORD } }
+            - name: PGDATA
+              value: "/var/lib/postgresql/data/pgdata"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
           volumeMounts:
             - name: db-storage
               mountPath: /var/lib/postgresql/data
-          readinessProbe: # K8s equivalent of healthcheck
+          startupProbe:
             exec:
-              command: [ "pg_isready", "-U", "test", "-d", "authentication" ]
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
             initialDelaySeconds: 10
             periodSeconds: 5
-      volumes:
-        - name: db-storage
-          persistentVolumeClaim:
-            claimName: keycloak-db-pvc
+            failureThreshold: 6
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 6
