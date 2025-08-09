@@ -31,7 +31,7 @@ spec:
               mountPath: /var/lib/postgresql/data
           readinessProbe: # K8s equivalent of healthcheck
             exec:
-              command: [ "pg_isready", "-U", "test", "-d", "test" ]
+              command: [ "pg_isready", "-U", "test", "-d", "authentication" ]
             initialDelaySeconds: 10
             periodSeconds: 5
       volumes:
