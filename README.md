@@ -61,7 +61,7 @@ If you replace the TLS certs, rebuild the image so that the development overlay 
     - Optionally push: `make build-and-push-images`
 
 2) Deploy development overlay:
-    - `make k8s-dev`
+    - `make k8s`
     - Wait for the `keycloak` StatefulSet Pod to become Ready.
     - If your cluster supports `LoadBalancer`, note the external IP of `Service/keycloak-loadbalancer`.
 
@@ -71,7 +71,7 @@ If you replace the TLS certs, rebuild the image so that the development overlay 
       **_admin_**/**_admin_** by default, not for **production**).
 
 4) Cleanup:
-    - `make k8s-dev-delete`
+    - `make k8s-delete`
 
 ## Common Pitfalls & Troubleshooting
 
@@ -95,8 +95,8 @@ If you replace the TLS certs, rebuild the image so that the development overlay 
 ## Useful Commands
 
 - Show make targets: `make help`
-- Apply dev overlay: `make k8s-dev`
-- Delete dev overlay: `make k8s-dev-delete`
+- Apply dev overlay: `make k8s`
+- Delete dev overlay: `make k8s-delete`
 - Apply prod overlay: `make k8s-production`
 - Delete prod overlay: `make k8s-production-delete`
 
