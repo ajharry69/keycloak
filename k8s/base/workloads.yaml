@@ -37,13 +37,10 @@ spec:
             # inside a cluster where a separate Ingress handles TLS termination.
             - name: KC_HTTP_ENABLED
               value: "true"
-            - name: KC_PROXY
-              value: "edge"
+            - name: KC_HTTP_MANAGEMENT_ENABLED
+              value: "true"
             - name: KC_CACHE
               value: "ispn"
-            # Use the Kubernetes configuration for distributed caches which is based on DNS
-            - name: KC_CACHE_STACK
-              value: "kubernetes"
             # Passing the Pod's IP primary address to the JGroups clustering as this is required in IPv6 only setups
             - name: POD_IP
               valueFrom:

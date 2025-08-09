@@ -3,14 +3,16 @@ kind: Service
 metadata:
   name: keycloak-loadbalancer
   namespace: keycloak
-#  labels:
-#    app: keycloak
 spec:
   selector:
     app: keycloak
-  type: LoadBalancer # Exposes the service externally via a cloud load balancer
+  type: LoadBalancer
   ports:
     - name: http
       protocol: TCP
-      port: 8443 # The port on the load balancer
-      targetPort: keycloak-https # The port on the pods
+      port: 80
+      targetPort: keycloak-http
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: keycloak-https

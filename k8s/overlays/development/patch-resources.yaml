@@ -15,7 +15,7 @@ spec:
             - name: KC_HOSTNAME_STRICT
               value: "false"
             - name: KC_HOSTNAME
-              value: "https://keycloak.keycloak.svc.cluster.local:8443"
+              value: "https://keycloak.keycloak.svc.cluster.local"
             - name: KC_HTTPS_CERTIFICATE_FILE
               value: "/opt/keycloak/conf/server.crt.pem"
             - name: KC_HTTPS_CERTIFICATE_KEY_FILE
