@@ -19,5 +19,8 @@ LABEL org.opencontainers.image.licenses="Apache-2.0"
 
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
 
+ENV KC_HEALTH_ENABLED=true
+ENV KC_METRICS_ENABLED=true
+ENV KC_FEATURES=preview,docker
 ENV KC_DB=postgres
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
