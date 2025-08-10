@@ -7,5 +7,6 @@ resources:
   # Add the development-specific secrets
   - secrets.yaml
   - services.yaml
+  - configs.yaml
 patches:
   - path: patch-resources.yaml

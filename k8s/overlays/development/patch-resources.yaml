@@ -20,3 +20,10 @@ spec:
               value: "/opt/keycloak/conf/server.crt.pem"
             - name: KC_HTTPS_CERTIFICATE_KEY_FILE
               value: "/opt/keycloak/conf/server.key.pem"
+          volumeMounts:
+            - name: dt-bank-keycloak-realm-volume
+              mountPath: /opt/keycloak/data/import/
+      volumes:
+        - name: dt-bank-keycloak-realm-volume
+          configMap:
+            name: dt-bank-keycloak-realm-config
