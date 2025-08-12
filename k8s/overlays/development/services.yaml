@@ -10,5 +10,5 @@ spec:
   ports:
     - name: https
       protocol: TCP
-      port: 443
+      port: 8443
       targetPort: keycloak-https
