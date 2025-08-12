@@ -138,7 +138,7 @@ Rollback path:
 ## Upgrading Keycloak
 
 - To use a different Keycloak version, build with `--build-arg TAG=<version>` and bump your image tag accordingly, e.g.:
-    - `docker build --build-arg TAG=26.1.3 -t ghcr.io/ajharry69/keycloak:26.1.3 .`
+    - `docker build --build-arg TAG=26.3.1 -t ghcr.io/ajharry69/keycloak:26.3.1 .`
     - Update references in manifests or pull the desired tag.
 
 ## License
