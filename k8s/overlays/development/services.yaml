@@ -8,6 +8,10 @@ spec:
     app: keycloak
   type: LoadBalancer
   ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: keycloak-http
     - name: https
       protocol: TCP
       port: 8443
