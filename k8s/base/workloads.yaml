@@ -65,21 +65,21 @@ spec:
               mountPath: /opt/keycloak/data
           startupProbe:
             httpGet:
-              scheme: HTTPS
+              scheme: HTTP
               path: /health/started
               port: 9000
             periodSeconds: 2
             failureThreshold: 300
           readinessProbe:
             httpGet:
-              scheme: HTTPS
+              scheme: HTTP
               path: /health/ready
               port: 9000
             periodSeconds: 10
             failureThreshold: 3
           livenessProbe:
             httpGet:
-              scheme: HTTPS
+              scheme: HTTP
               path: /health/live
               port: 9000
             periodSeconds: 10
