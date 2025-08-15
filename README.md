@@ -1,6 +1,6 @@
 # Keycloak Ops (Kubernetes Manifests + Image)
 
-[![Keycloak](https://github.com/ajharry69/keycloak/actions/workflows/keycloak.yml/badge.svg?branch=main)](https://github.com/ajharry69/keycloak/actions/workflows/keycloak.yml)
+[![Keycloak](https://github.com/Xently/keycloak/actions/workflows/keycloak.yml/badge.svg?branch=main)](https://github.com/Xently/keycloak/actions/workflows/keycloak.yml)
 
 ## Introduction
 
@@ -15,7 +15,7 @@ Audience: Advanced platform/devops engineers working with `kustomize`, `kubectl`
 
 ## Overview
 
-- Image registry/name: `ghcr.io/ajharry69/keycloak`
+- Image registry/name: `ghcr.io/Xently/keycloak`
 - Default Keycloak version TAG (ARG): `26.3.1`
 - Health endpoints exposed on management port 9000: `/health/started`, `/health/ready`, `/health/live`
 - Base uses a `StatefulSet` for Keycloak and a simple Postgres 17-alpine Deployment for persistence
@@ -55,7 +55,7 @@ If you replace the TLS certs, rebuild the image so that the development overlay 
 
 ## Quickstart
 
-1) Build the image (optional if you pull from [GHCR](https://github.com/ajharry69/keycloak/pkgs/container/keycloak)):
+1) Build the image (optional if you pull from [GHCR](https://github.com/Xently/keycloak/pkgs/container/keycloak)):
     - `make build-images`
     - Optionally push: `make build-and-push-images`
 
@@ -138,7 +138,7 @@ Rollback path:
 ## Upgrading Keycloak
 
 - To use a different Keycloak version, build with `--build-arg TAG=<version>` and bump your image tag accordingly, e.g.:
-    - `docker build --build-arg TAG=26.3.1 -t ghcr.io/ajharry69/keycloak:26.3.1 .`
+    - `docker build --build-arg TAG=26.3.1 -t ghcr.io/Xently/keycloak:26.3.1 .`
     - Update references in manifests or pull the desired tag.
 
 ## License

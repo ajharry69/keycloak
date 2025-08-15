@@ -14,7 +14,7 @@ COPY server.crt.pem server.key.pem /opt/keycloak/conf/
 RUN /opt/keycloak/bin/kc.sh build
 
 FROM quay.io/keycloak/keycloak:$TAG
-LABEL org.opencontainers.image.source="https://github.com/ajharry69/keycloak"
+LABEL org.opencontainers.image.source="https://github.com/Xently/keycloak"
 LABEL org.opencontainers.image.licenses="Apache-2.0"
 
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
