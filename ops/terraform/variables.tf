@@ -12,5 +12,5 @@ variable "gcp_region" {
 variable "github_repo" {
   description = "Your GitHub repository in 'owner/repo' format."
   type        = string
-  default     = "Xently/keycloak"
+  default     = "xently/keycloak"
 }
