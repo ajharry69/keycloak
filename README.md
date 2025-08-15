@@ -66,7 +66,7 @@ If you replace the TLS certs, rebuild the image so that the development overlay 
 
 3) Access Keycloak:
     - Dev: https via the LB or via cluster DNS: `https://keycloak.keycloak.svc.cluster.local` (dev overlay config).
-    - Admin credentials (dev): see [k8s/overlays/development/secrets.yaml](k8s/overlays/development/secrets.yaml) (
+    - Admin credentials (dev): see [k8s/overlays/development/secrets.yaml](ops/k8s/overlays/development/secrets.yaml) (
       **_admin_**/**_admin_** by default, not for **production**).
 
 4) Cleanup:
@@ -74,7 +74,7 @@ If you replace the TLS certs, rebuild the image so that the development overlay 
 
 ## Common Pitfalls & Troubleshooting
 
-- Namespace is missing: Applying an overlay includes [base/namespace.yaml](k8s/base/namespace.yaml), so the `keycloak`
+- Namespace is missing: Applying an overlay includes [base/namespace.yaml](ops/k8s/base/namespace.yaml), so the `keycloak`
   namespace will be created automatically.
 - Pending PVCs: Ensure a default `StorageClass` exists or set `storageClassName` on PVCs where required.
 - External Secrets prerequisites are missing: The production overlay will not reconcile `keycloak-credentials` without
@@ -91,7 +91,7 @@ This repo ships a minimal, single-instance PostgreSQL (StatefulSet) suitable for
 To "scale" Postgres, consider:
 
 - Vertical scaling (simplest):
-    - Increase CPU/memory limits/requests in [k8s/base/persistence/workloads.yaml](k8s/base/persistence/workloads.yaml).
+    - Increase CPU/memory limits/requests in [k8s/base/persistence/workloads.yaml](ops/k8s/base/persistence/workloads.yaml).
     - Increase PVC size by changing the volumeClaimTemplates storage request. Ensure your StorageClass supports
       expansion.
 - High availability / horizontal scaling (recommended for production):
@@ -111,7 +111,7 @@ Important notes:
 
 Example: switching Keycloak to an HA Postgres Service
 
-- After installing an operator/HA chart, set `KC_DB_URL` (in [k8s/base/workloads.yaml](k8s/base/workloads.yaml)) to the
+- After installing an operator/HA chart, set `KC_DB_URL` (in [k8s/base/workloads.yaml](ops/k8s/base/workloads.yaml)) to the
   operator-provided writer Service DNS, e.g.:
     - `jdbc:postgresql://my-postgres-primary.keycloak.svc.cluster.local:5432/authentication`
 - Keep `KC_DB_USERNAME`/`KC_DB_PASSWORD` in the `keycloak-credentials` Secret (or ExternalSecret in production).

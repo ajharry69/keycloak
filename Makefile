@@ -20,13 +20,13 @@ build-and-push-images: build-images ## Build and push Docker images.
 	docker image push ghcr.io/ajharry69/keycloak:26.3.1
 
 k8s: update-hosts ## Start kubernetes development cluster.
-	kubectl apply -k ./k8s/overlays/development/
+	kubectl apply -k ./ops/k8s/overlays/development/
 
 k8s-delete: ## Delete kubernetes development cluster.
-	kubectl delete -k ./k8s/overlays/development/
+	kubectl delete -k ./ops/k8s/overlays/development/
 
 k8s-production: ## Start kubernetes production cluster.
-	kubectl apply -k ./k8s/overlays/production/
+	kubectl apply -k ./ops/k8s/overlays/production/
 
 k8s-production-delete: ## Delete kubernetes production cluster.
-	kubectl delete -k ./k8s/overlays/production/
+	kubectl delete -k ./ops/k8s/overlays/production/
