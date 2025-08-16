@@ -19,9 +19,9 @@ resource "google_project_iam_member" "gke_admin" {
   member  = google_service_account.github_actions_sa.member
 }
 
-resource "google_project_iam_member" "secret_manager_access" {
+resource "google_project_iam_member" "secret_accessor" {
   project = var.gcp_project_id
-  role    = "roles/secretmanager.versions.access"
+  role    = "roles/secretmanager.secretAccessor"
   member  = google_service_account.github_actions_sa.member
 }
 
