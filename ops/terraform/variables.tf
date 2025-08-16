@@ -26,3 +26,28 @@ variable "eso_service_account" {
   type        = string
   default     = "external-secrets"
 }
+
+# --- Secret values consumed by Keycloak (used to create GSM secrets)
+variable "kc_admin_username" {
+  description = "Keycloak bootstrap admin username."
+  type        = string
+  sensitive   = true
+}
+
+variable "kc_admin_password" {
+  description = "Keycloak bootstrap admin password."
+  type        = string
+  sensitive   = true
+}
+
+variable "kc_db_username" {
+  description = "Database username for Keycloak."
+  type        = string
+  sensitive   = true
+}
+
+variable "kc_db_password" {
+  description = "Database password for Keycloak."
+  type        = string
+  sensitive   = true
+}
