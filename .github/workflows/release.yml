@@ -109,6 +109,14 @@ jobs:
           cluster_name: "keycloak-cluster"
           location: "africa-south1"
 
+      - name: Grant cluster-admin to deploy SA (idempotent)
+        run: |
+          set -euo pipefail
+          kubectl create clusterrolebinding github-actions-cluster-admin \
+            --clusterrole=cluster-admin \
+            --user=${{ secrets.GCP_SERVICE_ACCOUNT }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+
       - name: Setup Helm
         uses: azure/setup-helm@v4
         with:
