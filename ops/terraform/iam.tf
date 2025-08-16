@@ -21,7 +21,7 @@ resource "google_project_iam_member" "gke_developer" {
 
 resource "google_project_iam_member" "cluster_role_binding" {
   project = var.gcp_project_id
-  role    = "container.clusterRoleBindings.create"
+  role    = "roles/container.clusterRoleBindings.create"
   member  = google_service_account.github_actions_sa.member
 }
 
