@@ -9,14 +9,14 @@ resource "google_service_account" "github_actions_sa" {
 resource "google_project_iam_member" "artifact_writer" {
   project = var.gcp_project_id
   role    = "roles/artifactregistry.writer"
-  member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
+  member  = google_service_account.github_actions_sa.member
 }
 
 # Allow SA to manage the GKE cluster
 resource "google_project_iam_member" "gke_developer" {
   project = var.gcp_project_id
   role    = "roles/container.developer" # Provides necessary access to deploy to GKE
-  member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
+  member  = google_service_account.github_actions_sa.member
 }
 
 # Grant default node service account the default container node role to avoid degraded operations
