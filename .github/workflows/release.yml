@@ -127,8 +127,27 @@ jobs:
             --create-namespace \
             --version ${ESO_CHART_VERSION} \
             --set installCRDs=true
+          # Ensure CRDs are Established and NamesAccepted before applying any ExternalSecret resources
+          echo "Waiting for External Secrets CRDs to be Established and NamesAccepted..."
+          for crd in externalsecrets.external-secrets.io clustersecretstores.external-secrets.io secretstores.external-secrets.io; do
+            kubectl wait --for=condition=Established --timeout=180s crd/$crd || true
+            kubectl wait --for=condition=NamesAccepted --timeout=180s crd/$crd || true
+          done
+          # Give the API server a brief moment to refresh discovery information
+          sleep 10
           # Wait for the operator to be ready
           kubectl -n external-secrets rollout status deploy/external-secrets --timeout=300s
 
       - name: Deploy production overlay
-        run: kubectl apply -k .
+        run: |
+          set +e
+          for i in 1 2 3; do
+            echo "Attempt $i: kubectl apply -k ."
+            if kubectl apply -k .; then
+              exit 0
+            fi
+            echo "Apply failed; sleeping before retry..."
+            sleep 10
+          done
+          echo "Failed to apply manifests after retries." >&2
+          exit 1
