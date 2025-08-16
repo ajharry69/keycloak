@@ -13,15 +13,9 @@ resource "google_project_iam_member" "artifact_writer" {
 }
 
 # Allow SA to manage the GKE cluster
-resource "google_project_iam_member" "gke_developer" {
+resource "google_project_iam_member" "gke_admin" {
   project = var.gcp_project_id
-  role    = "roles/container.developer" # Provides necessary access to deploy to GKE
-  member  = google_service_account.github_actions_sa.member
-}
-
-resource "google_project_iam_member" "cluster_role_binding" {
-  project = var.gcp_project_id
-  role    = "roles/container.clusterRoleBindings.create"
+  role    = "roles/container.admin" # Provides necessary access to deploy to GKE
   member  = google_service_account.github_actions_sa.member
 }
 
