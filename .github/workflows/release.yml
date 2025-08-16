@@ -109,20 +109,26 @@ jobs:
           cluster_name: "keycloak-cluster"
           location: "africa-south1"
 
-      - name: Install External Secrets CRDs and Operator
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.15.3
+
+      - name: Install External Secrets (Helm)
         env:
-          ESO_VERSION: v0.9.14
+          ESO_CHART_VERSION: 0.19.2
         run: |
           set -euo pipefail
-          echo "Installing External Secrets CRDs ${ESO_VERSION}..."
-          kubectl apply -f https://raw.githubusercontent.com/external-secrets/external-secrets/${ESO_VERSION}/deploy/crds/bundle.yaml
-          # Wait for CRDs to be established before applying any ExternalSecret resources
-          kubectl wait --for=condition=Established crd/externalsecrets.external-secrets.io --timeout=90s || true
-          kubectl wait --for=condition=Established crd/clustersecretstores.external-secrets.io --timeout=90s || true
-          echo "Installing External Secrets Operator ${ESO_VERSION}..."
-          kubectl apply -f https://raw.githubusercontent.com/external-secrets/external-secrets/${ESO_VERSION}/deploy/operator.yaml
+          helm repo add external-secrets https://charts.external-secrets.io
+          helm repo update
+          # Install CRDs and Operator via Helm (recommended by official docs)
+          helm upgrade --install external-secrets external-secrets/external-secrets \
+            --namespace external-secrets \
+            --create-namespace \
+            --version ${ESO_CHART_VERSION} \
+            --set installCRDs=true
           # Wait for the operator to be ready
-          kubectl -n external-secrets rollout status deploy/external-secrets --timeout=180s
+          kubectl -n external-secrets rollout status deploy/external-secrets --timeout=300s
 
       - name: Deploy production overlay
         run: kubectl apply -k .
