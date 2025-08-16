@@ -1,13 +1,13 @@
 # --- Workload Identity Federation (Securely connect GitHub Actions to GCP) ---
 resource "google_iam_workload_identity_pool" "github" {
   workload_identity_pool_id = "github-actions-pool-keycloak"
-  display_name              = "GitHub Actions Pool (Keycloak)"
+  display_name              = "GitHub Actions (Keycloak)"
 }
 
 resource "google_iam_workload_identity_pool_provider" "github_provider" {
   workload_identity_pool_id          = google_iam_workload_identity_pool.github.workload_identity_pool_id
   workload_identity_pool_provider_id = "github-provider-keycloak"
-  display_name                       = "GitHub Actions Provider (Keycloak)"
+  display_name                       = "GitHub Actions (Keycloak)"
   attribute_condition                = "assertion.repository=='${var.github_repo}'"
   attribute_mapping = {
     "google.subject"       = "assertion.sub"
