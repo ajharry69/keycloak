@@ -2,7 +2,7 @@
 resource "google_secret_manager_secret" "kc_admin_user" {
   secret_id  = "keycloak-keycloak-admin-user"
   replication {
-    automatic = true
+    auto {}
   }
 }
 
@@ -14,7 +14,7 @@ resource "google_secret_manager_secret_version" "kc_admin_user_v" {
 resource "google_secret_manager_secret" "kc_admin_password" {
   secret_id  = "keycloak-keycloak-admin-password"
   replication {
-    automatic = true
+    auto {}
   }
 }
 
@@ -26,7 +26,7 @@ resource "google_secret_manager_secret_version" "kc_admin_password_v" {
 resource "google_secret_manager_secret" "kc_db_user" {
   secret_id  = "keycloak-keycloak-db-user"
   replication {
-    automatic = true
+    auto {}
   }
 }
 
@@ -38,7 +38,7 @@ resource "google_secret_manager_secret_version" "kc_db_user_v" {
 resource "google_secret_manager_secret" "kc_db_password" {
   secret_id  = "keycloak-keycloak-db-password"
   replication {
-    automatic = true
+    auto {}
   }
 }
 
