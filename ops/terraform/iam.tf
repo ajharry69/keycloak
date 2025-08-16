@@ -19,6 +19,12 @@ resource "google_project_iam_member" "gke_developer" {
   member  = google_service_account.github_actions_sa.member
 }
 
+resource "google_project_iam_member" "gke_developer" {
+  project = var.gcp_project_id
+  role    = "container.clusterRoleBindings.create"
+  member  = google_service_account.github_actions_sa.member
+}
+
 # Grant default node service account the default container node role to avoid degraded operations
 resource "google_project_iam_member" "node_sa_container_default" {
   project = var.gcp_project_id
