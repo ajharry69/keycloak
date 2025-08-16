@@ -109,5 +109,20 @@ jobs:
           cluster_name: "keycloak-cluster"
           location: "africa-south1"
 
+      - name: Install External Secrets CRDs and Operator
+        env:
+          ESO_VERSION: v0.9.14
+        run: |
+          set -euo pipefail
+          echo "Installing External Secrets CRDs ${ESO_VERSION}..."
+          kubectl apply -f https://raw.githubusercontent.com/external-secrets/external-secrets/${ESO_VERSION}/deploy/crds/bundle.yaml
+          # Wait for CRDs to be established before applying any ExternalSecret resources
+          kubectl wait --for=condition=Established crd/externalsecrets.external-secrets.io --timeout=90s || true
+          kubectl wait --for=condition=Established crd/clustersecretstores.external-secrets.io --timeout=90s || true
+          echo "Installing External Secrets Operator ${ESO_VERSION}..."
+          kubectl apply -f https://raw.githubusercontent.com/external-secrets/external-secrets/${ESO_VERSION}/deploy/operator.yaml
+          # Wait for the operator to be ready
+          kubectl -n external-secrets rollout status deploy/external-secrets --timeout=180s
+
       - name: Deploy production overlay
         run: kubectl apply -k .
