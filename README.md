@@ -1,6 +1,7 @@
 # Keycloak Ops (Kubernetes Manifests + Image)
 
-[![Keycloak](https://github.com/xently/keycloak/actions/workflows/keycloak.yml/badge.svg?branch=main)](https://github.com/xently/keycloak/actions/workflows/keycloak.yml)
+[![CI](https://github.com/xently/keycloak/actions/workflows/ci-terraform.yml/badge.svg)](https://github.com/xently/keycloak/actions/workflows/ci-terraform.yml)
+[![CD](https://github.com/xently/keycloak/actions/workflows/release.yml/badge.svg)](https://github.com/xently/keycloak/actions/workflows/release.yml)
 
 ## Introduction
 
