@@ -14,3 +14,15 @@ variable "github_repo" {
   type        = string
   default     = "xently/keycloak"
 }
+
+variable "eso_namespace" {
+  description = "Kubernetes namespace where External Secrets Operator runs."
+  type        = string
+  default     = "external-secrets"
+}
+
+variable "eso_service_account" {
+  description = "Kubernetes ServiceAccount name used by External Secrets Operator."
+  type        = string
+  default     = "external-secrets"
+}

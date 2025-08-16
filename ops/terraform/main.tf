@@ -1,3 +1,6 @@
+# --- Project Data ---
+data "google_project" "current" {}
+
 # --- VPC Network ---
 resource "google_compute_network" "vpc_network" {
   name                    = "keycloak-vpc"
@@ -20,6 +23,12 @@ resource "google_container_cluster" "primary" {
 
   # Autopilot automatically manages nodes and scaling.
   enable_autopilot = true
+  deletion_protection = false
+
+  # Ensure Workload Identity is explicitly enabled
+  workload_identity_config {
+    workload_pool = "${var.gcp_project_id}.svc.id.goog"
+  }
 }
 
 # --- Service Account for GitHub Actions to use for deployment ---
@@ -41,6 +50,32 @@ resource "google_project_iam_member" "gke_developer" {
   project = var.gcp_project_id
   role    = "roles/container.developer" # Provides necessary access to deploy to GKE
   member  = "serviceAccount:${google_service_account.github_actions_sa.email}"
+}
+
+# Grant default node service account the default container node role to avoid degraded operations
+resource "google_project_iam_member" "node_sa_container_default" {
+  project = var.gcp_project_id
+  role    = "roles/container.defaultNodeServiceAccount"
+  member  = "serviceAccount:${data.google_project.current.number}-compute@developer.gserviceaccount.com"
+}
+
+# Recommended: allow nodes to write logs/metrics for HPA and observability
+resource "google_project_iam_member" "node_sa_logging" {
+  project = var.gcp_project_id
+  role    = "roles/logging.logWriter"
+  member  = "serviceAccount:${data.google_project.current.number}-compute@developer.gserviceaccount.com"
+}
+
+resource "google_project_iam_member" "node_sa_monitoring" {
+  project = var.gcp_project_id
+  role    = "roles/monitoring.metricWriter"
+  member  = "serviceAccount:${data.google_project.current.number}-compute@developer.gserviceaccount.com"
+}
+
+resource "google_project_iam_member" "node_sa_stackdriver" {
+  project = var.gcp_project_id
+  role    = "roles/stackdriver.resourceMetadata.writer"
+  member  = "serviceAccount:${data.google_project.current.number}-compute@developer.gserviceaccount.com"
 }
 
 # --- Workload Identity Federation (Securely connect GitHub Actions to GCP) ---
@@ -68,4 +103,24 @@ resource "google_service_account_iam_member" "workload_identity_user" {
   service_account_id = google_service_account.github_actions_sa.name
   role               = "roles/iam.workloadIdentityUser"
   member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.repository/${var.github_repo}"
+}
+
+# --- External Secrets Operator (GSA + WI binding) ---
+resource "google_service_account" "eso_gsm" {
+  account_id   = "eso-gsm"
+  display_name = "External Secrets Operator - GSM Access"
+}
+
+# Allow ESO to read secrets from Secret Manager
+resource "google_project_iam_member" "eso_secret_accessor" {
+  project = var.gcp_project_id
+  role    = "roles/secretmanager.secretAccessor"
+  member  = "serviceAccount:${google_service_account.eso_gsm.email}"
+}
+
+# Bind KSA (external-secrets/external-secrets) to the GSA via Workload Identity
+resource "google_service_account_iam_member" "eso_wi_binding" {
+  service_account_id = google_service_account.eso_gsm.name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "serviceAccount:${var.gcp_project_id}.svc.id.goog[${var.eso_namespace}/${var.eso_service_account}]"
 }
