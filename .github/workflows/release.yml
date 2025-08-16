@@ -1,4 +1,4 @@
-name: CD - Build Docker Image, Provision Infra and Deploy Keycloak (Production)
+name: Release
 
 on:
   push:
