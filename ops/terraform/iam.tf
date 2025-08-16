@@ -1,7 +1,7 @@
 # --- Service Account for GitHub Actions to use for deployment ---
 resource "google_service_account" "github_actions_sa" {
-  account_id   = "github-actions-deployer"
-  display_name = "GitHub Actions Deployer SA"
+  account_id   = "github-actions-keycloak"
+  display_name = "GitHub Actions Keycloak SA"
 }
 
 # --- IAM Permissions for the Service Account ---
