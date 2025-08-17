@@ -3,14 +3,14 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
-      confirm_k8s:
+      confirm_deploy:
         description: "Type RELEASE to confirm deployment of Kubernetes resources"
         required: true
-        default: ""
-      confirm_infra:
+        default: "Kubernetes"
+      confirm_provision:
         description: "Type RELEASE to confirm provision of Terraform resources"
         required: true
-        default: ""
+        default: "Terraform"
   push:
     tags:
       - "[0-9]+.[0-9]+"
@@ -71,7 +71,7 @@ jobs:
     needs:
       - docker
     runs-on: ubuntu-24.04
-    if: github.event_name != 'workflow_dispatch' || github.event.inputs.confirm_infra == 'RELEASE'
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.confirm_provision == 'RELEASE'
     defaults:
       run:
         shell: bash
@@ -98,7 +98,7 @@ jobs:
     needs:
       - provision
     runs-on: ubuntu-24.04
-    if: github.event_name != 'workflow_dispatch' || github.event.inputs.confirm_k8s == 'RELEASE'
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.confirm_deploy == 'RELEASE'
     defaults:
       run:
         shell: bash

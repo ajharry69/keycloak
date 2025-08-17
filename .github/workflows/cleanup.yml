@@ -6,11 +6,11 @@ on:
       confirm_k8s:
         description: "Type DELETE to confirm deletion of Kubernetes resources"
         required: true
-        default: ""
+        default: "Kubernetes"
       confirm_infra:
         description: "Type DELETE to confirm deletion of Terraform resources"
         required: true
-        default: ""
+        default: "Terraform"
       remove_namespaces:
         description: "Also delete namespaces (keycloak, external-secrets). WARNING: This will remove all objects including PVCs in those namespaces."
         required: false
