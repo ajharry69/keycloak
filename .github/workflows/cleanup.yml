@@ -1,10 +1,14 @@
-name: Teardown (GKE)
+name: Teardown (GKE + Terraform)
 
 on:
   workflow_dispatch:
     inputs:
-      confirm:
+      confirm_k8s:
         description: "Type DELETE to confirm deletion of production Kubernetes resources"
+        required: true
+        default: ""
+      confirm_infra:
+        description: "Type DELETE to confirm deletion of production Terraform resources"
         required: true
         default: ""
       remove_namespaces:
@@ -31,7 +35,7 @@ jobs:
     steps:
       - name: Validate confirmation
         run: |
-          if [ "${{ github.event.inputs.confirm }}" != "DELETE" ]; then
+          if [ "${{ github.event.inputs.confirm_k8s }}" != "DELETE" ]; then
             echo "Refusing to proceed: you must type DELETE in the confirm input." >&2
             exit 1
           fi
@@ -96,3 +100,37 @@ jobs:
       - name: Summary
         run: |
           echo "Teardown complete. If namespaces were not deleted, some PVCs may remain; delete them manually if needed."
+
+  destroy-infra:
+    name: Terraform destroy (GCP infra)
+    needs:
+      - destroy-k8s
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash
+        working-directory: ops/terraform
+    env:
+      TF_IN_AUTOMATION: "true"
+
+    steps:
+      - name: Validate confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirm_infra }}" != "DELETE" ]; then
+            echo "Refusing to proceed: you must type DELETE in the confirm input." >&2
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Destroy
+        run: terraform destroy -auto-approve
