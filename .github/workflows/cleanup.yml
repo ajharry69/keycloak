@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       confirm_k8s:
-        description: "Type DELETE to confirm deletion of production Kubernetes resources"
+        description: "Type DELETE to confirm deletion of Kubernetes resources"
         required: true
         default: ""
       confirm_infra:
-        description: "Type DELETE to confirm deletion of production Terraform resources"
+        description: "Type DELETE to confirm deletion of Terraform resources"
         required: true
         default: ""
       remove_namespaces:

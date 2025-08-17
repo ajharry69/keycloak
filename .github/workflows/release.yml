@@ -1,6 +1,16 @@
 name: Release
 
 on:
+  workflow_dispatch:
+    inputs:
+      confirm_k8s:
+        description: "Type RELEASE to confirm deployment of Kubernetes resources"
+        required: true
+        default: ""
+      confirm_infra:
+        description: "Type RELEASE to confirm provision of Terraform resources"
+        required: true
+        default: ""
   push:
     tags:
       - "[0-9]+.[0-9]+"
@@ -17,6 +27,7 @@ env:
 jobs:
   docker:
     runs-on: ubuntu-24.04
+    if: github.event_name != 'workflow_dispatch'
     permissions:
       contents: read
       packages: write
@@ -60,6 +71,7 @@ jobs:
     needs:
       - docker
     runs-on: ubuntu-24.04
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.confirm_infra == 'RELEASE'
     defaults:
       run:
         shell: bash
@@ -86,6 +98,7 @@ jobs:
     needs:
       - provision
     runs-on: ubuntu-24.04
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.confirm_k8s == 'RELEASE'
     defaults:
       run:
         shell: bash
