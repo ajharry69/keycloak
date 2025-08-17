@@ -23,22 +23,15 @@ jobs:
         working-directory: ops/terraform
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+      - name: Terraform setup (checkout + init)
+        uses: ./.github/actions/terraform-setup
         with:
-          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+          tf_token: ${{ secrets.TF_API_TOKEN }}
 
       - name: Terraform Format Check
         id: fmt
         run: terraform fmt -check -recursive
         continue-on-error: true
-
-      - name: Terraform Init
-        id: init
-        run: terraform init -input=false
 
       - name: Terraform Validate
         id: validate

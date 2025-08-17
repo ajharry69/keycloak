@@ -1,0 +1,35 @@
+name: Terraform Setup
+
+description: "Checkout, setup Terraform CLI, and run terraform init in a given directory"
+
+author: "xently/keycloak maintainers"
+
+inputs:
+  tf_token:
+    description: "Terraform Cloud/Enterprise API token for CLI credentials (cli_config_credentials_token)"
+    required: true
+  terraform_version:
+    description: "Terraform version to install (optional)"
+    required: false
+    default: ""
+  init_args:
+    description: "Additional arguments to pass to terraform init"
+    required: false
+    default: "-input=false"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ inputs.terraform_version }}
+        cli_config_credentials_token: ${{ inputs.tf_token }}
+
+    - name: Terraform Init
+      shell: bash
+      id: init
+      run: terraform init ${{ inputs.init_args }}
