@@ -67,7 +67,10 @@ jobs:
     env:
       TF_IN_AUTOMATION: "true"
     steps:
-      - name: Terraform setup (checkout + init)
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Terraform setup (init)
         uses: ./.github/actions/terraform-setup
 
       - name: Terraform Apply
@@ -83,6 +86,9 @@ jobs:
         shell: bash
         working-directory: ops/k8s/overlays/production
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Setup GKE access (OIDC + gcloud + kubeconfig + Helm)
         uses: ./.github/actions/gke-setup
 

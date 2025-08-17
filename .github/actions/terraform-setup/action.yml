@@ -1,6 +1,6 @@
 name: Terraform Setup
 
-description: "Checkout, setup Terraform CLI, and run terraform init in a given directory"
+description: "Setup Terraform CLI, and run terraform init in a given directory"
 
 author: "xently/keycloak maintainers"
 
@@ -21,9 +21,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
       with:

@@ -1,6 +1,6 @@
 name: GKE Setup
 
-description: "Checkout, authenticate to GCP via WIF, install gcloud, fetch GKE credentials, and install Helm"
+description: "Authenticate to GCP via WIF, install gcloud, fetch GKE credentials, and install Helm"
 
 author: "xently/keycloak maintainers"
 
@@ -29,9 +29,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-
     - name: Authenticate to Google Cloud (Workload Identity Federation)
       uses: google-github-actions/auth@v2
       with:

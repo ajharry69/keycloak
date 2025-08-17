@@ -23,7 +23,10 @@ jobs:
         working-directory: ops/terraform
 
     steps:
-      - name: Terraform setup (checkout + init)
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Terraform setup (init)
         uses: ./.github/actions/terraform-setup
 
       - name: Terraform Format Check
