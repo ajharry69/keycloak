@@ -72,6 +72,8 @@ jobs:
 
       - name: Terraform setup (init)
         uses: ./.github/actions/terraform-setup
+        with:
+          tf_token: ${{ secrets.TF_API_TOKEN }}
 
       - name: Terraform Apply
         if: success()
@@ -91,6 +93,9 @@ jobs:
 
       - name: Setup GKE access (OIDC + gcloud + kubeconfig + Helm)
         uses: ./.github/actions/gke-setup
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       - name: Install External Secrets (Helm)
         env:

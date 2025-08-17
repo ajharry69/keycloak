@@ -28,6 +28,8 @@ jobs:
 
       - name: Terraform setup (init)
         uses: ./.github/actions/terraform-setup
+        with:
+          tf_token: ${{ secrets.TF_API_TOKEN }}
 
       - name: Terraform Format Check
         id: fmt

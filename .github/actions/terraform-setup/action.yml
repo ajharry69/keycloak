@@ -7,8 +7,7 @@ author: "xently/keycloak maintainers"
 inputs:
   tf_token:
     description: "Terraform Cloud/Enterprise API token for CLI credentials (cli_config_credentials_token)"
-    required: false
-    default: ${{ secrets.TF_API_TOKEN }}
+    required: true
   terraform_version:
     description: "Terraform version to install (optional)"
     required: false
