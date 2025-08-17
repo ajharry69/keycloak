@@ -67,7 +67,7 @@ jobs:
     needs:
       - docker
     runs-on: ubuntu-24.04
-    if: github.event_name != 'workflow_dispatch' || (github.event.inputs.confirm_release == 'RELEASE' && (needs.docker.result == 'success' || needs.docker.result == 'skipped'))
+    if: (github.event_name != 'workflow_dispatch' || github.event.inputs.confirm_release == 'RELEASE') && (needs.docker.result == 'success' || needs.docker.result == 'skipped')
     defaults:
       run:
         shell: bash
