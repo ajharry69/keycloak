@@ -110,10 +110,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Terraform setup (init)
-        uses: ./.github/actions/terraform-setup
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
         with:
-          tf_token: ${{ secrets.TF_API_TOKEN }}
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Terraform Init
+        run: terraform init -input=false
 
       - name: Terraform Destroy
         run: terraform destroy -auto-approve
