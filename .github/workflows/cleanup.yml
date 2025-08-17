@@ -1,0 +1,98 @@
+name: Teardown (GKE)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type DELETE to confirm deletion of production Kubernetes resources"
+        required: true
+        default: ""
+      remove_namespaces:
+        description: "Also delete namespaces (keycloak, external-secrets). WARNING: This will remove all objects including PVCs in those namespaces."
+        required: false
+        default: "false"
+      remove_crds:
+        description: "Also delete External Secrets CRDs (cluster-scoped). Usually not necessary."
+        required: false
+        default: "false"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  destroy-k8s:
+    name: Delete Kubernetes resources on GKE
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash
+        working-directory: ops/k8s/overlays/production
+    steps:
+      - name: Validate confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "DELETE" ]; then
+            echo "Refusing to proceed: you must type DELETE in the confirm input." >&2
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Get GKE Credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: "keycloak-cluster"
+          location: "africa-south1"
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.15.3
+
+      - name: Delete production overlay resources
+        run: |
+          set -euo pipefail
+          # Delete the overlay resources (namespace-scoped)
+          kubectl delete -k . --ignore-not-found=true || true
+
+      - name: Uninstall External Secrets (Helm)
+        run: |
+          set -euo pipefail
+          # Uninstall the Helm release if present
+          if helm status external-secrets -n external-secrets >/dev/null 2>&1; then
+            helm uninstall external-secrets -n external-secrets || true
+          fi
+
+      - name: Optional - Delete namespaces (DANGEROUS)
+        if: ${{ github.event.inputs.remove_namespaces == 'true' }}
+        run: |
+          set -euo pipefail
+          for ns in keycloak external-secrets; do
+            if kubectl get ns "$ns" >/dev/null 2>&1; then
+              echo "Deleting namespace $ns (this will remove all objects including PVCs)"
+              kubectl delete ns "$ns" --ignore-not-found=true --wait=true || true
+            fi
+          done
+
+      - name: Optional - Delete External Secrets CRDs (cluster-scoped)
+        if: ${{ github.event.inputs.remove_crds == 'true' }}
+        run: |
+          set -euo pipefail
+          # These are cluster-scoped CRDs; remove only if you are sure no other namespaces use ESO
+          for crd in externalsecrets.external-secrets.io clustersecretstores.external-secrets.io secretstores.external-secrets.io; do
+            kubectl delete crd "$crd" --ignore-not-found=true || true
+          done
+
+      - name: Summary
+        run: |
+          echo "Teardown complete. If namespaces were not deleted, some PVCs may remain; delete them manually if needed."
