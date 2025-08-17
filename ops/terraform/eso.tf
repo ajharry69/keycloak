@@ -8,7 +8,32 @@ resource "google_service_account" "eso_gsm" {
 resource "google_project_iam_member" "eso_secret_accessor" {
   project = var.gcp_project_id
   role    = "roles/secretmanager.secretAccessor"
-  member  = "serviceAccount:${google_service_account.eso_gsm.email}"
+  member  = google_service_account.eso_gsm.member
+}
+
+# Least-privilege access: grant ESO GSA accessor on specific GSM secrets managed in this stack
+resource "google_secret_manager_secret_iam_member" "eso_access_admin_user" {
+  secret_id = google_secret_manager_secret.kc_admin_user.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = google_service_account.eso_gsm.member
+}
+
+resource "google_secret_manager_secret_iam_member" "eso_access_admin_password" {
+  secret_id = google_secret_manager_secret.kc_admin_password.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = google_service_account.eso_gsm.member
+}
+
+resource "google_secret_manager_secret_iam_member" "eso_access_db_user" {
+  secret_id = google_secret_manager_secret.kc_db_user.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = google_service_account.eso_gsm.member
+}
+
+resource "google_secret_manager_secret_iam_member" "eso_access_db_password" {
+  secret_id = google_secret_manager_secret.kc_db_password.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = google_service_account.eso_gsm.member
 }
 
 # Bind KSA (external-secrets/external-secrets) to the GSA via Workload Identity
