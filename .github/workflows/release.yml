@@ -85,28 +85,11 @@ jobs:
         shell: bash
         working-directory: ops/k8s/overlays/production
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Authenticate to Google Cloud (Workload Identity Federation)
-        uses: google-github-actions/auth@v2
+      - name: Setup GKE access (OIDC + gcloud + kubeconfig + Helm)
+        uses: ./.github/actions/gke-setup
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-
-      - name: Setup gcloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Get GKE Credentials
-        uses: google-github-actions/get-gke-credentials@v2
-        with:
-          cluster_name: "keycloak-cluster"
-          location: "africa-south1"
-
-      - name: Setup Helm
-        uses: azure/setup-helm@v4
-        with:
-          version: v3.15.3
 
       - name: Install External Secrets (Helm)
         env:
