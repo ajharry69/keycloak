@@ -130,8 +130,24 @@ jobs:
           done
           # Give the API server a brief moment to refresh discovery information
           sleep 10
-          # Wait for the operator to be ready
+          # Wait for the operator and its webhook/cert-controller deployments to be ready
           kubectl -n external-secrets rollout status deploy/external-secrets --timeout=300s
+          kubectl -n external-secrets rollout status deploy/external-secrets-webhook --timeout=300s
+          kubectl -n external-secrets rollout status deploy/external-secrets-cert-controller --timeout=300s
+          # Ensure the webhook Service has active endpoints before applying manifests
+          echo "Waiting for external-secrets-webhook Service endpoints..."
+          for i in $(seq 1 30); do
+            if kubectl -n external-secrets get endpoints external-secrets-webhook -o jsonpath='{.subsets[*].addresses[*].ip}' | grep -qE '\S'; then
+              echo "external-secrets-webhook endpoints are ready"; break;
+            fi
+            echo "No webhook endpoints yet (attempt $i/30); sleeping 5s..."; sleep 5;
+          done
+          # Final check: fail fast if endpoints are still missing
+          if ! kubectl -n external-secrets get endpoints external-secrets-webhook -o jsonpath='{.subsets[*].addresses[*].ip}' | grep -qE '\S'; then
+            echo "ERROR: external-secrets-webhook has no endpoints after waiting." >&2
+            kubectl -n external-secrets get deploy,po,svc
+            exit 1
+          fi
 
       - name: Deploy production overlay
         run: kubectl apply -k .
