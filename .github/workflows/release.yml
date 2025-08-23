@@ -109,6 +109,60 @@ jobs:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
+      - name: Install NGINX Ingress Controller (Helm)
+        env:
+          NGINX_CHART_VERSION: 4.11.3
+        run: |
+          set -euo pipefail
+          helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+          helm repo update
+          helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+            --namespace ingress-nginx \
+            --create-namespace \
+            --version ${NGINX_CHART_VERSION} \
+            --set controller.resources.requests.cpu=100m \
+            --set controller.resources.requests.memory=128Mi \
+            --set controller.resources.limits.cpu=500m \
+            --set controller.resources.limits.memory=512Mi
+          # Wait for the controller to be ready
+          kubectl -n ingress-nginx rollout status deploy/ingress-nginx-controller --timeout=300s
+          # Wait for Service external IP
+          echo "Waiting for ingress-nginx controller Service external IP..."
+          for i in $(seq 1 60); do
+            EXTIP=$(kubectl -n ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}{.status.loadBalancer.ingress[0].hostname}')
+            if [ -n "${EXTIP}" ]; then echo "Found external address: ${EXTIP}"; break; fi
+            echo "No external address yet (attempt $i/60); sleeping 5s..."; sleep 5;
+          done
+      
+      - name: Install cert-manager (Helm)
+        env:
+          CERT_MANAGER_VERSION: v1.14.5
+        run: |
+          set -euo pipefail
+          helm repo add jetstack https://charts.jetstack.io
+          helm repo update
+          helm upgrade --install cert-manager jetstack/cert-manager \
+            --namespace cert-manager \
+            --create-namespace \
+            --version ${CERT_MANAGER_VERSION} \
+            --set installCRDs=true \
+            --set resources.requests.cpu=50m \
+            --set resources.requests.memory=128Mi \
+            --set resources.limits.cpu=300m \
+            --set resources.limits.memory=512Mi
+          # Wait for cert-manager components to be ready
+          kubectl -n cert-manager rollout status deploy/cert-manager --timeout=300s
+          kubectl -n cert-manager rollout status deploy/cert-manager-webhook --timeout=300s
+          kubectl -n cert-manager rollout status deploy/cert-manager-cainjector --timeout=300s
+          # Ensure webhook Service has endpoints
+          echo "Waiting for cert-manager-webhook Service EndpointSlices..."
+          for i in $(seq 1 30); do
+            if kubectl -n cert-manager get endpointslice -l kubernetes.io/service-name=cert-manager-webhook -o jsonpath='{range .items[*].endpoints[*]}{.addresses[0]}{" "}{end}' | grep -qE '\\S'; then
+              echo "cert-manager-webhook EndpointSlices are ready"; break;
+            fi
+            echo "No webhook EndpointSlices yet (attempt $i/30); sleeping 5s..."; sleep 5;
+          done
+      
       - name: Install External Secrets (Helm)
         env:
           ESO_CHART_VERSION: 0.19.2
