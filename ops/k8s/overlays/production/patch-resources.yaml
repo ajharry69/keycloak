@@ -22,12 +22,12 @@ spec:
             requests:
               cpu: 500m
               memory: 1700Mi
-          startupProbe:
-            httpGet:
-              scheme: HTTPS
-          readinessProbe:
-            httpGet:
-              scheme: HTTPS
-          livenessProbe:
-            httpGet:
-              scheme: HTTPS
+          #startupProbe:
+          #  httpGet:
+          #    scheme: HTTPS
+          #readinessProbe:
+          #  httpGet:
+          #    scheme: HTTPS
+          #livenessProbe:
+          #  httpGet:
+          #    scheme: HTTPS
