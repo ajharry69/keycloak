@@ -16,10 +16,19 @@ spec:
               value: "false"
             - name: KC_HOSTNAME
               value: "http://keycloak.keycloak.svc.cluster.local:8080"
-            #- name: KC_HTTPS_CERTIFICATE_FILE
-            #  value: "/opt/keycloak/conf/server.crt.pem"
-            #- name: KC_HTTPS_CERTIFICATE_KEY_FILE
-            #  value: "/opt/keycloak/conf/server.key.pem"
+          #  - name: KC_HTTPS_CERTIFICATE_FILE
+          #    value: "/opt/keycloak/conf/server.crt.pem"
+          #  - name: KC_HTTPS_CERTIFICATE_KEY_FILE
+          #    value: "/opt/keycloak/conf/server.key.pem"
+          #startupProbe:
+          #  httpGet:
+          #    scheme: HTTPS
+          #readinessProbe:
+          #  httpGet:
+          #    scheme: HTTPS
+          #livenessProbe:
+          #  httpGet:
+          #    scheme: HTTPS
           volumeMounts:
             - name: dt-bank-keycloak-realm-volume
               mountPath: /opt/keycloak/data/import/
