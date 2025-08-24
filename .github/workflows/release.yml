@@ -154,13 +154,21 @@ jobs:
           kubectl -n cert-manager rollout status deploy/cert-manager --timeout=300s
           kubectl -n cert-manager rollout status deploy/cert-manager-webhook --timeout=300s
           kubectl -n cert-manager rollout status deploy/cert-manager-cainjector --timeout=300s
-          # Ensure webhook Service has endpoints
+          # Ensure webhook Service has endpoints (EndpointSlice) and CA bundle injection completed
           echo "Waiting for cert-manager-webhook Service EndpointSlices..."
-          for i in $(seq 1 30); do
+          for i in $(seq 1 60); do
             if kubectl -n cert-manager get endpointslice -l kubernetes.io/service-name=cert-manager-webhook -o jsonpath='{range .items[*].endpoints[*]}{.addresses[0]}{" "}{end}' | grep -qE '\\S'; then
               echo "cert-manager-webhook EndpointSlices are ready"; break;
             fi
-            echo "No webhook EndpointSlices yet (attempt $i/30); sleeping 5s..."; sleep 5;
+            echo "No webhook EndpointSlices yet (attempt $i/60); sleeping 5s..."; sleep 5;
+          done
+          echo "Waiting for cert-manager ValidatingWebhookConfiguration CA bundle injection..."
+          for i in $(seq 1 60); do
+            CABUNDLE=$(kubectl get validatingwebhookconfigurations.admissionregistration.k8s.io cert-manager-webhook -o jsonpath='{.webhooks[0].clientConfig.caBundle}' || true)
+            if [ -n "${CABUNDLE}" ]; then
+              echo "cert-manager-webhook caBundle is present"; break;
+            fi
+            echo "caBundle not injected yet (attempt $i/60); sleeping 5s..."; sleep 5;
           done
       
       - name: Install External Secrets (Helm)
@@ -175,7 +183,22 @@ jobs:
             --namespace external-secrets \
             --create-namespace \
             --version ${ESO_CHART_VERSION} \
-            --set installCRDs=true
+            --set installCRDs=true \
+            --set serviceAccount.create=true \
+            --set serviceAccount.name=external-secrets \
+            --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="eso-gsm@${{ secrets.GOOGLE_PROJECT_ID }}.iam.gserviceaccount.com" \
+            --set controller.resources.requests.cpu=50m \
+            --set controller.resources.requests.memory=128Mi \
+            --set controller.resources.limits.cpu=500m \
+            --set controller.resources.limits.memory=512Mi \
+            --set webhook.resources.requests.cpu=50m \
+            --set webhook.resources.requests.memory=64Mi \
+            --set webhook.resources.limits.cpu=200m \
+            --set webhook.resources.limits.memory=256Mi \
+            --set certController.resources.requests.cpu=50m \
+            --set certController.resources.requests.memory=64Mi \
+            --set certController.resources.limits.cpu=200m \
+            --set certController.resources.limits.memory=256Mi
           # Ensure CRDs are Established and NamesAccepted before applying any ExternalSecret resources
           echo "Waiting for External Secrets CRDs to be Established and NamesAccepted..."
           for crd in externalsecrets.external-secrets.io clustersecretstores.external-secrets.io secretstores.external-secrets.io; do
@@ -188,20 +211,31 @@ jobs:
           kubectl -n external-secrets rollout status deploy/external-secrets --timeout=300s
           kubectl -n external-secrets rollout status deploy/external-secrets-webhook --timeout=300s
           kubectl -n external-secrets rollout status deploy/external-secrets-cert-controller --timeout=300s
-          # Ensure the webhook Service has active endpoints before applying manifests
-          echo "Waiting for external-secrets-webhook Service endpoints..."
+          # Ensure the webhook Service has active endpoints before applying manifests (use EndpointSlice to avoid deprecation warnings)
+          echo "Waiting for external-secrets-webhook Service EndpointSlices..."
           for i in $(seq 1 30); do
-            if kubectl -n external-secrets get endpoints external-secrets-webhook -o jsonpath='{.subsets[*].addresses[*].ip}' | grep -qE '\S'; then
-              echo "external-secrets-webhook endpoints are ready"; break;
+            if kubectl -n external-secrets get endpointslice -l kubernetes.io/service-name=external-secrets-webhook -o jsonpath='{range .items[*].endpoints[*]}{.addresses[0]}{" "}{end}' | grep -qE '\S'; then
+              echo "external-secrets-webhook EndpointSlices are ready"; break;
             fi
-            echo "No webhook endpoints yet (attempt $i/30); sleeping 5s..."; sleep 5;
+            echo "No webhook EndpointSlices yet (attempt $i/30); sleeping 5s..."; sleep 5;
           done
-          # Final check: fail fast if endpoints are still missing
-          if ! kubectl -n external-secrets get endpoints external-secrets-webhook -o jsonpath='{.subsets[*].addresses[*].ip}' | grep -qE '\S'; then
-            echo "ERROR: external-secrets-webhook has no endpoints after waiting." >&2
-            kubectl -n external-secrets get deploy,po,svc
+          # Final check: fail fast if EndpointSlices are still missing
+          if ! kubectl -n external-secrets get endpointslice -l kubernetes.io/service-name=external-secrets-webhook -o jsonpath='{range .items[*].endpoints[*]}{.addresses[0]}{" "}{end}' | grep -qE '\S'; then
+            echo "ERROR: external-secrets-webhook has no EndpointSlices with addresses after waiting." >&2
+            kubectl -n external-secrets get deploy,po,svc,endpointslice
             exit 1
           fi
 
       - name: Deploy production overlay
-        run: kubectl apply -k .
+        run: |
+          set +e
+          for i in 1 2 3; do
+            echo "Attempt $i: kubectl apply -k ."
+            if kubectl apply -k .; then
+              exit 0
+            fi
+            echo "Apply failed; sleeping before retry..."
+            sleep 10
+          done
+          echo "Failed to apply manifests after retries." >&2
+          exit 1
