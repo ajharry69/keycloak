@@ -133,7 +133,7 @@ jobs:
             if [ -n "${EXTIP}" ]; then echo "Found external address: ${EXTIP}"; break; fi
             echo "No external address yet (attempt $i/60); sleeping 5s..."; sleep 5;
           done
-      
+
       - name: Install cert-manager (Helm)
         env:
           CERT_MANAGER_VERSION: v1.14.5
@@ -157,13 +157,13 @@ jobs:
           # Ensure webhook Service has endpoints (EndpointSlice) and CA bundle injection completed
           echo "Waiting for cert-manager-webhook Service EndpointSlices..."
           for i in $(seq 1 60); do
-            if kubectl -n cert-manager get endpointslice -l kubernetes.io/service-name=cert-manager-webhook -o jsonpath='{range .items[*].endpoints[*]}{.addresses[0]}{" "}{end}' | grep -qE '\\S'; then
+            if kubectl -n cert-manager get endpointslice -l kubernetes.io/service-name=cert-manager-webhook -o jsonpath='{range .items[*].endpoints[*]}{.addresses[0]}{" "}{end}' | grep -q '[^[:space:]]'; then
               echo "cert-manager-webhook EndpointSlices are ready"; break;
             fi
             echo "No webhook EndpointSlices yet (attempt $i/60); sleeping 5s..."; sleep 5;
           done
           # Hard fail if EndpointSlices are still not present
-          if ! kubectl -n cert-manager get endpointslice -l kubernetes.io/service-name=cert-manager-webhook -o jsonpath='{range .items[*].endpoints[*]}{.addresses[0]}{" "}{end}' | grep -qE '\\S'; then
+          if ! kubectl -n cert-manager get endpointslice -l kubernetes.io/service-name=cert-manager-webhook -o jsonpath='{range .items[*].endpoints[*]}{.addresses[0]}{" "}{end}' | grep -q '[^[:space:]]'; then
             echo "ERROR: cert-manager-webhook has no EndpointSlices with addresses after waiting." >&2
             kubectl -n cert-manager get deploy,po,svc,endpointslice
             exit 1
@@ -203,7 +203,7 @@ jobs:
             kubectl get validatingwebhookconfigurations.admissionregistration.k8s.io cert-manager-webhook -o yaml | sed -n '1,120p'
             exit 1
           fi
-      
+
       - name: Install External Secrets (Helm)
         env:
           ESO_CHART_VERSION: 0.19.2
@@ -247,13 +247,13 @@ jobs:
           # Ensure the webhook Service has active endpoints before applying manifests (use EndpointSlice to avoid deprecation warnings)
           echo "Waiting for external-secrets-webhook Service EndpointSlices..."
           for i in $(seq 1 30); do
-            if kubectl -n external-secrets get endpointslice -l kubernetes.io/service-name=external-secrets-webhook -o jsonpath='{range .items[*].endpoints[*]}{.addresses[0]}{" "}{end}' | grep -qE '\S'; then
+            if kubectl -n external-secrets get endpointslice -l kubernetes.io/service-name=external-secrets-webhook -o jsonpath='{range .items[*].endpoints[*]}{.addresses[0]}{" "}{end}' | grep -q '[^[:space:]]'; then
               echo "external-secrets-webhook EndpointSlices are ready"; break;
             fi
             echo "No webhook EndpointSlices yet (attempt $i/30); sleeping 5s..."; sleep 5;
           done
           # Final check: fail fast if EndpointSlices are still missing
-          if ! kubectl -n external-secrets get endpointslice -l kubernetes.io/service-name=external-secrets-webhook -o jsonpath='{range .items[*].endpoints[*]}{.addresses[0]}{" "}{end}' | grep -qE '\S'; then
+          if ! kubectl -n external-secrets get endpointslice -l kubernetes.io/service-name=external-secrets-webhook -o jsonpath='{range .items[*].endpoints[*]}{.addresses[0]}{" "}{end}' | grep -q '[^[:space:]]'; then
             echo "ERROR: external-secrets-webhook has no EndpointSlices with addresses after waiting." >&2
             kubectl -n external-secrets get deploy,po,svc,endpointslice
             exit 1
