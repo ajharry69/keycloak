@@ -4,7 +4,6 @@ kind: Kustomization
 resources:
   - ../../base
   - secrets.yaml
-  - services.yaml
   - cluster-issuers.yaml
   - ingress.yaml
 patches:
