@@ -1,4 +1,4 @@
-name: Teardown (GKE + Terraform)
+name: Teardown
 
 on:
   workflow_dispatch:
