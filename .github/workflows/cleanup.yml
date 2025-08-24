@@ -12,11 +12,15 @@ on:
         required: true
         default: "Terraform"
       remove_namespaces:
-        description: "Also delete namespaces (keycloak, external-secrets). WARNING: This will remove all objects including PVCs in those namespaces."
+        description: "Also delete namespaces (keycloak, external-secrets, ingress-nginx, cert-manager). WARNING: This will remove all objects including PVCs in those namespaces."
         required: false
         default: "false"
       remove_crds:
         description: "Also delete External Secrets CRDs (cluster-scoped). Usually not necessary."
+        required: false
+        default: "false"
+      remove_cert_manager_crds:
+        description: "Also delete cert-manager CRDs (cluster-scoped). Only if you are sure nothing else depends on cert-manager."
         required: false
         default: "false"
 
@@ -57,11 +61,25 @@ jobs:
             helm uninstall external-secrets -n external-secrets || true
           fi
 
+      - name: Uninstall cert-manager (Helm)
+        run: |
+          set -euo pipefail
+          if helm status cert-manager -n cert-manager >/dev/null 2>&1; then
+            helm uninstall cert-manager -n cert-manager || true
+          fi
+
+      - name: Uninstall NGINX Ingress Controller (Helm)
+        run: |
+          set -euo pipefail
+          if helm status ingress-nginx -n ingress-nginx >/dev/null 2>&1; then
+            helm uninstall ingress-nginx -n ingress-nginx || true
+          fi
+
       - name: Optional - Delete namespaces (DANGEROUS)
         if: ${{ github.event.inputs.remove_namespaces == 'true' }}
         run: |
           set -euo pipefail
-          for ns in keycloak external-secrets; do
+          for ns in keycloak external-secrets ingress-nginx cert-manager; do
             if kubectl get ns "$ns" >/dev/null 2>&1; then
               echo "Deleting namespace $ns (this will remove all objects including PVCs)"
               kubectl delete ns "$ns" --ignore-not-found=true --wait=true || true
@@ -74,6 +92,15 @@ jobs:
           set -euo pipefail
           # These are cluster-scoped CRDs; remove only if you are sure no other namespaces use ESO
           for crd in externalsecrets.external-secrets.io clustersecretstores.external-secrets.io secretstores.external-secrets.io; do
+            kubectl delete crd "$crd" --ignore-not-found=true || true
+          done
+
+      - name: Optional - Delete cert-manager CRDs (cluster-scoped)
+        if: ${{ github.event.inputs.remove_cert_manager_crds == 'true' }}
+        run: |
+          set -euo pipefail
+          # cert-manager CRDs are cluster-scoped and shared; remove only if you are sure nothing else depends on it
+          for crd in certificates.cert-manager.io certificaterequests.cert-manager.io challenges.acme.cert-manager.io clusterissuers.cert-manager.io issuers.cert-manager.io orders.acme.cert-manager.io; do
             kubectl delete crd "$crd" --ignore-not-found=true || true
           done
 
