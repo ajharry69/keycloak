@@ -162,6 +162,13 @@ jobs:
             fi
             echo "No webhook EndpointSlices yet (attempt $i/60); sleeping 5s..."; sleep 5;
           done
+          # Hard fail if EndpointSlices are still not present
+          if ! kubectl -n cert-manager get endpointslice -l kubernetes.io/service-name=cert-manager-webhook -o jsonpath='{range .items[*].endpoints[*]}{.addresses[0]}{" "}{end}' | grep -qE '\\S'; then
+            echo "ERROR: cert-manager-webhook has no EndpointSlices with addresses after waiting." >&2
+            kubectl -n cert-manager get deploy,po,svc,endpointslice
+            exit 1
+          fi
+
           echo "Waiting for cert-manager ValidatingWebhookConfiguration CA bundle injection..."
           for i in $(seq 1 60); do
             CABUNDLE=$(kubectl get validatingwebhookconfigurations.admissionregistration.k8s.io cert-manager-webhook -o jsonpath='{.webhooks[0].clientConfig.caBundle}' || true)
@@ -170,6 +177,32 @@ jobs:
             fi
             echo "caBundle not injected yet (attempt $i/60); sleeping 5s..."; sleep 5;
           done
+
+          # If still empty, try a remedial restart of cainjector + webhook and wait again
+          CABUNDLE=$(kubectl get validatingwebhookconfigurations.admissionregistration.k8s.io cert-manager-webhook -o jsonpath='{.webhooks[0].clientConfig.caBundle}' || true)
+          if [ -z "${CABUNDLE}" ]; then
+            echo "caBundle still empty. Restarting cert-manager-cainjector and cert-manager-webhook, then waiting again..."
+            kubectl -n cert-manager rollout restart deploy/cert-manager-cainjector || true
+            kubectl -n cert-manager rollout restart deploy/cert-manager-webhook || true
+            kubectl -n cert-manager rollout status deploy/cert-manager-cainjector --timeout=300s || true
+            kubectl -n cert-manager rollout status deploy/cert-manager-webhook --timeout=300s || true
+
+            for i in $(seq 1 60); do
+              CABUNDLE=$(kubectl get validatingwebhookconfigurations.admissionregistration.k8s.io cert-manager-webhook -o jsonpath='{.webhooks[0].clientConfig.caBundle}' || true)
+              if [ -n "${CABUNDLE}" ]; then
+                echo "cert-manager-webhook caBundle is present after restart"; break;
+              fi
+              echo "caBundle not injected yet post-restart (attempt $i/60); sleeping 5s..."; sleep 5;
+            done
+          fi
+
+          # Final fail-fast if caBundle is still missing
+          CABUNDLE=$(kubectl get validatingwebhookconfigurations.admissionregistration.k8s.io cert-manager-webhook -o jsonpath='{.webhooks[0].clientConfig.caBundle}' || true)
+          if [ -z "${CABUNDLE}" ]; then
+            echo "ERROR: cert-manager-webhook caBundle is empty after extended waits and restart. Aborting before applying manifests." >&2
+            kubectl get validatingwebhookconfigurations.admissionregistration.k8s.io cert-manager-webhook -o yaml | sed -n '1,120p'
+            exit 1
+          fi
       
       - name: Install External Secrets (Helm)
         env:
