@@ -187,30 +187,21 @@ jobs:
             echo "caBundle not injected yet (attempt $i/60); sleeping 5s..."; sleep 5;
           done
 
-          # If still empty, try a remedial restart of cainjector + webhook and wait again
-          CABUNDLE=$(kubectl get validatingwebhookconfigurations.admissionregistration.k8s.io cert-manager-webhook -o jsonpath='{.webhooks[0].clientConfig.caBundle}' || true)
-          if [ -z "${CABUNDLE}" ]; then
-            echo "caBundle still empty. Restarting cert-manager-cainjector and cert-manager-webhook, then waiting again..."
-            kubectl -n cert-manager rollout restart deploy/cert-manager-cainjector || true
-            kubectl -n cert-manager rollout restart deploy/cert-manager-webhook || true
-            kubectl -n cert-manager rollout status deploy/cert-manager-cainjector --timeout=300s || true
-            kubectl -n cert-manager rollout status deploy/cert-manager-webhook --timeout=300s || true
-
-            for i in $(seq 1 60); do
-              CABUNDLE=$(kubectl get validatingwebhookconfigurations.admissionregistration.k8s.io cert-manager-webhook -o jsonpath='{.webhooks[0].clientConfig.caBundle}' || true)
-              if [ -n "${CABUNDLE}" ]; then
-                echo "cert-manager-webhook caBundle is present after restart"; break;
-              fi
-              echo "caBundle not injected yet post-restart (attempt $i/60); sleeping 5s..."; sleep 5;
-            done
-          fi
-
           # Final check: if caBundle is still missing, warn and continue (webhook failurePolicy=Ignore avoids blocking)
           CABUNDLE=$(kubectl get validatingwebhookconfigurations.admissionregistration.k8s.io cert-manager-webhook -o jsonpath='{.webhooks[0].clientConfig.caBundle}' || true)
           if [ -z "${CABUNDLE}" ]; then
-            echo "WARNING: cert-manager-webhook caBundle is empty after extended waits and restart. Continuing because webhook.failurePolicy=Ignore." >&2
+            echo "WARNING: cert-manager-webhook caBundle is empty after extended waits. Continuing because webhook.failurePolicy=Ignore." >&2
             kubectl get validatingwebhookconfigurations.admissionregistration.k8s.io cert-manager-webhook -o yaml | sed -n '1,120p' || true
           fi
+
+          # Ensure the cert-manager validating webhook failurePolicy is set to Ignore to avoid admission blocking during CA injection races
+          echo "Patching cert-manager ValidatingWebhookConfiguration failurePolicy to Ignore (idempotent)..."
+          # Try to patch the first two webhook entries if they exist
+          kubectl patch validatingwebhookconfigurations.admissionregistration.k8s.io cert-manager-webhook --type='json' -p='[{"op":"replace","path":"/webhooks/0/failurePolicy","value":"Ignore"}]' || true
+          kubectl patch validatingwebhookconfigurations.admissionregistration.k8s.io cert-manager-webhook --type='json' -p='[{"op":"replace","path":"/webhooks/1/failurePolicy","value":"Ignore"}]' || true
+          echo -n "Current failurePolicy: "
+          kubectl get validatingwebhookconfigurations.admissionregistration.k8s.io cert-manager-webhook -o jsonpath='{.webhooks[0].failurePolicy}' || true
+          echo
 
       - name: Install External Secrets (Helm)
         env:
@@ -227,7 +218,7 @@ jobs:
             --set installCRDs=true \
             --set serviceAccount.create=true \
             --set serviceAccount.name=external-secrets \
-            --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="eso-gsm@${{ secrets.GOOGLE_PROJECT_ID }}.iam.gserviceaccount.com" \
+            --set serviceAccount.annotations."iam\.gke\.io/gcp-service-account"="eso-gsm@ke-xently.iam.gserviceaccount.com" \
             --set controller.resources.requests.cpu=50m \
             --set controller.resources.requests.memory=128Mi \
             --set controller.resources.limits.cpu=500m \
